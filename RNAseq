@@ -1,1 +1,31 @@
 
+#quality control
+source('http://Bioconductor.org/biocLite.R')
+biocLite("ShortRead")
+biocLite("SRAdb")
+biocLite("R.utils")
+library(ShortRead)
+library(SRAdb)
+library(R.utils)
+getFASTQfile("SRR921344")
+gunzip("SRR921344.fastq.gz", destname="T2-1.fastq")
+fastqfile="T2-1.fastq"
+qa <- qa(dirPath=".", pattern=fastqfile, type="fastq")
+report(qa, dest="qcReport", type="html")
+
+
+
+#normalization
+source('http://Bioconductor.org/biocLite.R')
+biocLite("Rsamtools")
+biocLite("DESeq")
+biocLite("edgeR")
+library(Rsamtools)
+library(DESeq)
+library(edgeR)
+fls <- list.files(system.file("extdata", package="GenomicRanges"), recursive=TRUE, pattern="*bam$", full= TRUE)
+bfl <- BamFileList(fls, index=character())
+features <- GRanges(seqnames=c(rep("chr2L", 4), rep("chr2R",5), rep("chr3L", 2)), ranges=IRanges(c(1000, 3000, 4000, 7000, 2000, 3000, 3600, 4000, 7500, 5000, 5400), width=c(rep(500,3), 600, 900, 500, 300, 900, 300, 500, 500)), "-", group_id=c(rep("A", 4), rep("B", 5), rep("C", 2)))
+olap <- summarizeOverlaps(features, bfl)
+deseq <- newCountDataSet(assays(olap)$counts, rownames(colData(olap)))
+edger <- DGEList(assays(olap)$counts, group=rownames(colData(olap)))
