@@ -7,3 +7,50 @@
 > data(CLLbatch);
 > CLLrma <- rma(CLLbatch);
 > e <-exprs(CLLrma);
+
+
+library(limma)
+library(gcrma)
+library(CLL)
+data(CLLbatch)
+data(disease)
+CLLbatch<-CLLbatch[, -match(c("CLL10.CEL", "CLL1.CEL", "CLL13.CEL"), sampleNames(CLLbatch))]
+CLLgcrma<-gcrma(CLLbatch)
+sampleNames(CLLgcrma) <- gsub(".CEL$", "", sampleNames(CLLgcrma))
+disease<- disease[match(sampleNames(CLLgcrma), disease[,"SampleID"]),]
+eset<- exprs(CLLgcrma)
+disease<-factor(disease[,"Disease"])
+design <-model.matrix(~-1+disease)
+contrast.matrix <- makeContrasts (contrasts= "diseaseprogres. -diseasestable", levels=design)
+
+fit <-lmFit(eset, design)
+fit1 <- contrasts.fit(fit, contrast.matrix)
+fit2<-eBayes(fit1)
+dif <- topTable(fit2, coef="diseaseprogres. - diseasestable", n=nrow(fit2), lfc= log2(1.5))
+dif <-dif[dif[, "P.Value"] <0.01]
+head(dif)
+
+#annotation
+library(annotate)
+affydb <- annPkgName(CLLbatch@annotation, type="db")
+affydb
+biocLite("hgu95av2.db")
+library(affydb, character.only=TRUE)
+dif$symbols <- getSYMBOL(rownames(dif), affydb)
+dif$EntrezID <- getEG(rownames(dif), affydb)
+
+
+#GO enrichment
+
+
+#KEGG pathways
+
+
+#heatmap
+biocLite("pheatmap")
+library(pheatmap)
+selected <- eset[rownames(dif),]
+rownames(selected) <- dif$symbols
+pheatmap(selected[1:20,], color= colorRampPalette(c("green", "black", "red"))(100), fontsize_row=4, scale="row", border_color=NA)
+
+
