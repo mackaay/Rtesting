@@ -1,0 +1,2 @@
+> #install and load R package
+> source('http://Bioconductor.org/biocLite.R');
