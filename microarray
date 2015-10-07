@@ -1,2 +1,9 @@
 > #install and load R package
 > source('http://Bioconductor.org/biocLite.R');
+> biocLite("CLL");
+> library(CLL);
+
+> #load data
+> data(CLLbatch);
+> CLLrma <- rma(CLLbatch);
+> e <-exprs(CLLrma);
